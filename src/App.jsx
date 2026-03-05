@@ -116,6 +116,30 @@ const STEPS = [
   { id: "editor", label: "Generate & Edit", num: 3 },
 ];
 
+// ── Helper: robustly parse JSON object from model output ──
+function parseJsonObjectFromModel(raw) {
+  if (!raw || typeof raw !== "string") {
+    throw new Error("Empty response from model");
+  }
+
+  // Strip common markdown fences if present
+  const unfenced = raw.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
+
+  // Try direct parse first
+  try {
+    return JSON.parse(unfenced);
+  } catch {
+    // Fallback: extract first {...} block
+    const start = unfenced.indexOf("{");
+    const end   = unfenced.lastIndexOf("}");
+    if (start === -1 || end === -1 || end <= start) {
+      throw new Error("Could not find JSON object in model response.");
+    }
+    const candidate = unfenced.slice(start, end + 1);
+    return JSON.parse(candidate);
+  }
+}
+
 export default function App() {
   const [screen, setScreen]               = useState("onboarding");
   const [step, setStep]                   = useState("topics");
@@ -130,7 +154,7 @@ export default function App() {
     setGenerating(true);
     setStep("editor");
     try {
-      const sys = `You are an elite conversion-focused blog writer for US beauty and wellness businesses. You study top-performing salon blogs from platforms like Fresha, Vagaro, GlossGenius, StyleSeat and Booksy. You write scannable, high-converting content with short paragraphs, bullet points, expert tips, statistics, and multiple CTAs that drive bookings. Return ONLY valid JSON with no markdown fences.`;
+      const sys = `You are an elite conversion-focused blog writer for US beauty and wellness businesses. You study top-performing salon blogs from platforms like Fresha, Vagaro, GlossGenius, StyleSeat and Booksy. You write scannable, high-converting content with short paragraphs, bullet points, expert tips, statistics, and multiple CTAs that drive bookings. Return ONLY valid JSON with no markdown fences or explanation.`;
       const formatGuide = FORMAT_STRUCTURES[format] || FORMAT_STRUCTURES["how-to"];
       const prompt = `Write a HIGH-CONVERTING, SEO-optimized blog post for the US beauty/wellness industry.
 
@@ -199,11 +223,11 @@ Return a JSON object with this structure:
 
 Only include the fields relevant to the chosen format. Set irrelevant fields to null. Return ONLY the JSON object.`;
 
-      const raw     = await callClaude(sys, prompt);
-      const cleaned = raw.replace(/```json\n?/g, "").replace(/```/g, "").trim();
-      setBlog(JSON.parse(cleaned));
+      const raw = await callClaude(sys, prompt);
+      const parsed = parseJsonObjectFromModel(raw);
+      setBlog(parsed);
     } catch (e) {
-      console.error(e);
+      console.error("Error generating blog:", e);
       setBlog({ title: "Error generating blog", metaDescription: "Please try again", keywords: [], sections: [{ heading: "Something went wrong", content: "We couldn't generate your blog. Please click 'Regenerate' to try again, or go back and select a different topic." }], cta: "", wordCount: 0 });
     }
     setGenerating(false);

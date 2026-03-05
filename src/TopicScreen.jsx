@@ -2,6 +2,34 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { T, currentMonth, currentSeason } from "./constants";
 import { callClaude } from "./api";
 
+// ── Helper: robustly parse JSON array from model output ──
+function parseJsonArrayFromModel(raw) {
+  if (!raw || typeof raw !== "string") {
+    throw new Error("Empty response from model");
+  }
+
+  const unfenced = raw.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
+
+  try {
+    const parsed = JSON.parse(unfenced);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {
+    // fall through to bracket extraction
+  }
+
+  const start = unfenced.indexOf("[");
+  const end   = unfenced.lastIndexOf("]");
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("Could not find JSON array in model response.");
+  }
+  const candidate = unfenced.slice(start, end + 1);
+  const parsed = JSON.parse(candidate);
+  if (!Array.isArray(parsed)) {
+    throw new Error("Model response did not contain a JSON array.");
+  }
+  return parsed;
+}
+
 export default function TopicScreen({ profile, onSelect, loading, setLoading }) {
   const [topics, setTopics]           = useState([]);
   const [customTopic, setCustomTopic] = useState("");
@@ -12,7 +40,7 @@ export default function TopicScreen({ profile, onSelect, loading, setLoading }) 
     setLoading(true);
     setError("");
     try {
-      const sys = `You are an SEO content strategist specializing in the US beauty and wellness industry. You deeply understand local search behavior, seasonal trends, and what content drives bookings for small businesses. Return ONLY valid JSON, no markdown fences, no preamble.`;
+      const sys = `You are an SEO content strategist specializing in the US beauty and wellness industry. You deeply understand local search behavior, seasonal trends, and what content drives bookings for small businesses. Return ONLY valid JSON, no markdown fences, no preamble, no explanation.`;
       const prompt = `Generate 5 blog topic suggestions for this business:
 - Business: ${profile.businessName} (${profile.businessType})
 - Location: ${profile.location || "US-based"}
@@ -32,11 +60,11 @@ Return a JSON array of exactly 5 objects with:
 Mix categories. Include at least one seasonal (${currentSeason}) and one question-based topic. Return ONLY the JSON array.`;
 
       const raw = await callClaude(sys, prompt);
-      const cleaned = raw.replace(/```json\n?/g, "").replace(/```/g, "").trim();
-      setTopics(JSON.parse(cleaned));
+      const parsed = parseJsonArrayFromModel(raw);
+      setTopics(parsed);
     } catch (e) {
       setError(e.message || "Couldn't generate topics. Please try again.");
-      console.error(e);
+      console.error("Error generating topics:", e);
     }
     setLoading(false);
   }, [profile, setLoading]);
