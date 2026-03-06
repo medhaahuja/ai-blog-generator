@@ -17,16 +17,21 @@ function useUnsplashImage(query, orientation = "landscape") {
 
 // ── Formatting toolbar button ──
 function FmtBtn({ label, title, onClick, active }) {
+  const [flashing, setFlashing] = useState(false);
+  const flash = () => { setFlashing(true); setTimeout(() => setFlashing(false), 350); };
   return (
-    <button title={title} onMouseDown={e => { e.preventDefault(); onClick(); }}
+    <button
+      title={title}
+      onMouseDown={e => { e.preventDefault(); flash(); onClick(); }}
       style={{
         fontFamily: T.fontSans, fontSize: 12, fontWeight: active ? 700 : 500,
         minWidth: 28, height: 26, padding: "0 6px", borderRadius: 6,
         border: `1px solid ${active ? T.accent + "66" : "transparent"}`,
         background: active ? T.accentLight : "transparent",
         color: active ? T.accent : T.textSecondary,
-        cursor: "pointer", transition: "all 0.12s",
+        cursor: "pointer", transition: "background 0.12s, color 0.12s",
         display: "flex", alignItems: "center", justifyContent: "center",
+        animation: flashing ? "btnFlash 0.35s ease-out forwards" : "none",
       }}
       onMouseEnter={e => { if (!active) { e.currentTarget.style.background = T.surfaceAlt; e.currentTarget.style.color = T.text; } }}
       onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = T.textSecondary; } }}
