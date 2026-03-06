@@ -161,6 +161,7 @@ export default function App() {
   const [blog, setBlog]                   = useState(null);
   const [generating, setGenerating]       = useState(false);
   const [topicsLoading, setTopicsLoading] = useState(false);
+  const [suggestedTopics, setSuggestedTopics] = useState([]);
 
   // ── Blog library (persisted to localStorage) ──
   const [blogs, setBlogs] = useState(() => {
@@ -559,7 +560,7 @@ Only include the fields relevant to the chosen format. Set irrelevant fields to 
             alignSelf: step === "editor" ? "stretch" : undefined,
           }}>
             {step === "topics" && (
-              <TopicScreen profile={profile} onSelect={handleTopicSelect} loading={topicsLoading} setLoading={setTopicsLoading} />
+              <TopicScreen profile={profile} onSelect={handleTopicSelect} loading={topicsLoading} setLoading={setTopicsLoading} topics={suggestedTopics} setTopics={setSuggestedTopics} />
             )}
             {step === "format" && selectedTopic && (
               <>

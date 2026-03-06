@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { T, currentMonth, currentSeason } from "./constants";
 import { callClaude } from "./api";
 
@@ -30,11 +30,9 @@ function parseJsonArrayFromModel(raw) {
   return parsed;
 }
 
-export default function TopicScreen({ profile, onSelect, loading, setLoading }) {
-  const [topics, setTopics]           = useState([]);
+export default function TopicScreen({ profile, onSelect, loading, setLoading, topics, setTopics }) {
   const [customTopic, setCustomTopic] = useState("");
   const [error, setError]             = useState("");
-  const fetched = useRef(false);
 
   const fetchTopics = useCallback(async () => {
     setLoading(true);
@@ -67,11 +65,11 @@ Mix categories. Include at least one seasonal (${currentSeason}) and one questio
       console.error("Error generating topics:", e);
     }
     setLoading(false);
-  }, [profile, setLoading]);
+  }, [profile, setLoading, setTopics]);
 
   useEffect(() => {
-    if (!fetched.current) { fetched.current = true; fetchTopics(); }
-  }, [fetchTopics]);
+    if (topics.length === 0) fetchTopics();
+  }, []);
 
   const volColor = (v) => v === "High" ? T.green : v === "Medium" ? T.warm : T.textTertiary;
   const compColor = (c) => c === "Low" ? T.green : c === "Medium" ? T.warm : T.danger;

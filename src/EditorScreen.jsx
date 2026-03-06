@@ -16,17 +16,20 @@ function useUnsplashImage(query, orientation = "landscape") {
 }
 
 // ── Formatting toolbar button ──
-function FmtBtn({ label, title, onClick }) {
+function FmtBtn({ label, title, onClick, active }) {
   return (
     <button title={title} onMouseDown={e => { e.preventDefault(); onClick(); }}
       style={{
-        fontFamily: T.fontSans, fontSize: 12, fontWeight: 500, minWidth: 28, height: 26,
-        padding: "0 6px", borderRadius: 6, border: "1px solid transparent",
-        background: "transparent", color: T.textSecondary, cursor: "pointer", transition: "all 0.12s",
+        fontFamily: T.fontSans, fontSize: 12, fontWeight: active ? 700 : 500,
+        minWidth: 28, height: 26, padding: "0 6px", borderRadius: 6,
+        border: `1px solid ${active ? T.accent + "66" : "transparent"}`,
+        background: active ? T.accentLight : "transparent",
+        color: active ? T.accent : T.textSecondary,
+        cursor: "pointer", transition: "all 0.12s",
         display: "flex", alignItems: "center", justifyContent: "center",
       }}
-      onMouseEnter={e => { e.currentTarget.style.background = T.surfaceAlt; e.currentTarget.style.color = T.text; }}
-      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = T.textSecondary; }}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = T.surfaceAlt; e.currentTarget.style.color = T.text; } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = T.textSecondary; } }}
     >{label}</button>
   );
 }
@@ -562,8 +565,27 @@ export default function EditorScreen({ blog, setBlog, profile, onBack, onRegener
   const [copied, setCopied]         = useState(false);
   const [faqOpen, setFaqOpen]       = useState(new Set());
   const [progress, setProgress]     = useState(0);
+  const [showLinkPopup, setShowLinkPopup] = useState(false);
+  const [linkUrl, setLinkUrl]       = useState("");
+  const [activeFormats, setActiveFormats] = useState({});
   const blogRef                     = useRef(null);
   const imageInputRef               = useRef(null);
+  const savedRangeRef               = useRef(null);
+  const linkInputRef                = useRef(null);
+
+  // Track active formats on selection change
+  useEffect(() => {
+    const update = () => {
+      setActiveFormats({
+        bold:          document.queryCommandState("bold"),
+        italic:        document.queryCommandState("italic"),
+        underline:     document.queryCommandState("underline"),
+        strikeThrough: document.queryCommandState("strikeThrough"),
+      });
+    };
+    document.addEventListener("selectionchange", update);
+    return () => document.removeEventListener("selectionchange", update);
+  }, []);
 
   // Reading progress tracking
   useEffect(() => {
@@ -580,13 +602,50 @@ export default function EditorScreen({ blog, setBlog, profile, onBack, onRegener
   }, []);
 
   const exec = (cmd, val = null) => document.execCommand(cmd, false, val);
+
+  // Save selection before file picker (which causes focus loss)
+  const handleImgClick = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+    imageInputRef.current?.click();
+  };
+
   const handleImageFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => exec("insertImage", ev.target.result);
+    reader.onload = (ev) => {
+      // Restore saved selection before inserting
+      if (savedRangeRef.current) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedRangeRef.current);
+      }
+      exec("insertImage", ev.target.result);
+    };
     reader.readAsDataURL(file);
     e.target.value = "";
+  };
+
+  // Link popup handlers
+  const openLinkPopup = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+    setShowLinkPopup(true);
+    setTimeout(() => linkInputRef.current?.focus(), 50);
+  };
+
+  const insertLink = () => {
+    const url = linkUrl.trim();
+    if (!url) { setShowLinkPopup(false); return; }
+    if (savedRangeRef.current) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedRangeRef.current);
+    }
+    exec("createLink", url.startsWith("http") ? url : `https://${url}`);
+    setShowLinkPopup(false);
+    setLinkUrl("");
   };
 
   const toggleFaq = (i) => {
@@ -698,22 +757,87 @@ export default function EditorScreen({ blog, setBlog, profile, onBack, onRegener
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // ── Loading state ──
+  // ── Generation progress bar ──
+  const GEN_STEPS = [
+    { label: "Analyzing your topic & business…",        pct: 12 },
+    { label: "Structuring sections & format…",          pct: 28 },
+    { label: "Writing SEO-optimized content…",          pct: 52 },
+    { label: "Optimizing for GEO & AI engines…",        pct: 74 },
+    { label: "Adding stats, tips & CTAs…",              pct: 88 },
+    { label: "Finalizing your blog post…",              pct: 96 },
+  ];
+  const [genStep, setGenStep] = useState(0);
+  useEffect(() => {
+    if (!generating) { setGenStep(0); return; }
+    setGenStep(0);
+    const timers = GEN_STEPS.map((_, i) =>
+      setTimeout(() => setGenStep(i), i * 3200)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [generating]);
+
   if (generating) {
+    const step = GEN_STEPS[genStep] || GEN_STEPS[GEN_STEPS.length - 1];
     return (
-      <div style={{ textAlign: "center", padding: "100px 20px", animation: "fadeIn 0.3s ease" }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: "50%", margin: "0 auto 24px",
-          background: T.accentLight, border: `1px solid ${T.accent}44`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 26, color: T.accent, animation: "glowPulse 2s ease infinite",
-        }}>*</div>
-        <h2 style={{ fontFamily: T.font, fontSize: 22, fontWeight: 700, color: T.text, margin: "0 0 8px" }}>Writing your blog...</h2>
-        <p style={{ fontFamily: T.fontSans, fontSize: 13, color: T.textSecondary, margin: "0 0 32px" }}>Crafting high-converting content for {profile.businessName}</p>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <div style={{ width: 200, height: 2, background: T.border, borderRadius: 2, overflow: "hidden" }}>
-            <div style={{ height: "100%", borderRadius: 2, background: `linear-gradient(to right, ${T.accent}, ${T.blue})`, animation: "loading 1.5s ease infinite" }} />
-          </div>
+      <div style={{ maxWidth: 480, margin: "100px auto 0", padding: "0 24px", animation: "fadeIn 0.3s ease" }}>
+        <div style={{ marginBottom: 32, textAlign: "center" }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: "50%", margin: "0 auto 20px",
+            background: T.accentLight, border: `1px solid ${T.accent}44`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 22, color: T.accent, animation: "glowPulse 2s ease infinite",
+          }}>*</div>
+          <h2 style={{ fontFamily: T.font, fontSize: 22, fontWeight: 700, color: T.text, margin: "0 0 6px" }}>
+            Writing your blog…
+          </h2>
+          <p style={{ fontFamily: T.fontSans, fontSize: 13, color: T.textSecondary, margin: 0 }}>
+            {profile.businessName}
+          </p>
+        </div>
+
+        {/* Steps list */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
+          {GEN_STEPS.map((s, i) => {
+            const done    = i < genStep;
+            const active  = i === genStep;
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{
+                  width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, fontWeight: 700,
+                  background: done ? T.green : active ? T.accent : T.surfaceAlt,
+                  color: done || active ? "#0A0A0A" : T.textTertiary,
+                  border: `1px solid ${done ? T.green : active ? T.accent : T.border}`,
+                  transition: "all 0.4s ease",
+                }}>
+                  {done ? "✓" : i + 1}
+                </div>
+                <span style={{
+                  fontFamily: T.fontSans, fontSize: 13,
+                  color: done ? T.textSecondary : active ? T.text : T.textTertiary,
+                  fontWeight: active ? 600 : 400,
+                  transition: "color 0.4s ease",
+                }}>{s.label}</span>
+                {active && (
+                  <div style={{ marginLeft: "auto", width: 16, height: 16, borderRadius: "50%", border: `2px solid ${T.border}`, borderTopColor: T.accent, animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ height: 4, background: T.border, borderRadius: 4, overflow: "hidden" }}>
+          <div style={{
+            height: "100%", borderRadius: 4,
+            background: `linear-gradient(to right, ${T.accent}, ${T.blue})`,
+            width: `${step.pct}%`,
+            transition: "width 0.8s ease",
+          }} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+          <span style={{ fontFamily: T.fontMono, fontSize: 10, color: T.textTertiary }}>{step.pct}%</span>
         </div>
       </div>
     );
@@ -730,7 +854,7 @@ export default function EditorScreen({ blog, setBlog, profile, onBack, onRegener
       <input ref={imageInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageFile} />
 
       {/* ── Toolbar ── */}
-      <div style={{ background: T.surface, borderRadius: T.radius, border: `1px solid ${T.border}`, position: "sticky", top: 52, zIndex: 10, overflow: "hidden" }}>
+      <div style={{ background: T.surface, borderRadius: T.radius, border: `1px solid ${T.border}`, position: "sticky", top: 52, zIndex: 10 }}>
         <ReadingProgressBar progress={progress} />
         {/* Row 1: nav + copy */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, padding: "11px 16px", borderBottom: `1px solid ${T.border}` }}>
@@ -779,10 +903,10 @@ export default function EditorScreen({ blog, setBlog, profile, onBack, onRegener
         </div>
         {/* Row 2: formatting */}
         <div style={{ display: "flex", alignItems: "center", gap: 2, padding: "6px 12px", flexWrap: "wrap" }}>
-          <FmtBtn label={<b>B</b>} title="Bold" onClick={() => exec("bold")} />
-          <FmtBtn label={<i>I</i>} title="Italic" onClick={() => exec("italic")} />
-          <FmtBtn label={<u>U</u>} title="Underline" onClick={() => exec("underline")} />
-          <FmtBtn label={<s>S</s>} title="Strikethrough" onClick={() => exec("strikeThrough")} />
+          <FmtBtn label={<b>B</b>} title="Bold" onClick={() => exec("bold")} active={activeFormats.bold} />
+          <FmtBtn label={<i>I</i>} title="Italic" onClick={() => exec("italic")} active={activeFormats.italic} />
+          <FmtBtn label={<u>U</u>} title="Underline" onClick={() => exec("underline")} active={activeFormats.underline} />
+          <FmtBtn label={<s>S</s>} title="Strikethrough" onClick={() => exec("strikeThrough")} active={activeFormats.strikeThrough} />
           <FmtDivider />
           <FmtBtn label="H2" title="Heading 2" onClick={() => exec("formatBlock", "<h2>")} />
           <FmtBtn label="H3" title="Heading 3" onClick={() => exec("formatBlock", "<h3>")} />
@@ -790,28 +914,55 @@ export default function EditorScreen({ blog, setBlog, profile, onBack, onRegener
           <FmtBtn label="*" title="Bullet list" onClick={() => exec("insertUnorderedList")} />
           <FmtBtn label="1." title="Numbered list" onClick={() => exec("insertOrderedList")} />
           <FmtDivider />
-          <FmtBtn label="IMG" title="Insert image" onClick={() => imageInputRef.current?.click()} />
-          <FmtDivider />
-          <FmtBtn label="Undo" title="Undo" onClick={() => exec("undo")} />
-          <FmtBtn label="Redo" title="Redo" onClick={() => exec("redo")} />
+          <FmtBtn label="IMG" title="Insert image" onClick={handleImgClick} />
+
+          {/* Link button with anchored popup */}
+          <div style={{ position: "relative" }}>
+            <FmtBtn
+              label="🔗"
+              title="Insert link"
+              onClick={openLinkPopup}
+              active={showLinkPopup}
+            />
+            {showLinkPopup && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 200,
+                display: "flex", alignItems: "center", gap: 6,
+                background: T.surface, border: `1px solid ${T.border}`,
+                borderRadius: T.radiusSm, padding: "6px 10px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+                whiteSpace: "nowrap",
+              }}>
+                <input
+                  ref={linkInputRef}
+                  value={linkUrl}
+                  onChange={e => setLinkUrl(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") insertLink(); if (e.key === "Escape") { setShowLinkPopup(false); setLinkUrl(""); } }}
+                  placeholder="https://example.com"
+                  style={{
+                    fontFamily: T.fontSans, fontSize: 12, width: 220,
+                    background: T.surfaceAlt, border: `1px solid ${T.border}`,
+                    borderRadius: 6, padding: "5px 10px", color: T.text, outline: "none",
+                  }}
+                  onFocus={e => e.target.style.borderColor = T.accent}
+                  onBlur={e => e.target.style.borderColor = T.border}
+                />
+                <button onClick={insertLink} style={{
+                  fontFamily: T.fontSans, fontSize: 11, fontWeight: 700,
+                  padding: "5px 12px", borderRadius: 6, border: "none",
+                  background: T.accent, color: "#0A0A0A", cursor: "pointer",
+                }}>Insert</button>
+                <button onClick={() => { setShowLinkPopup(false); setLinkUrl(""); }} style={{
+                  fontFamily: T.fontSans, fontSize: 11,
+                  padding: "5px 8px", borderRadius: 6,
+                  border: `1px solid ${T.border}`, background: "transparent",
+                  color: T.textTertiary, cursor: "pointer",
+                }}>✕</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* ── SEO meta strip ── */}
-      <div style={{ padding: "14px 18px", background: T.surface, borderRadius: T.radiusSm, border: `1px solid ${T.border}` }}>
-        <SectionLabel>SEO Meta</SectionLabel>
-        <p style={{ fontFamily: T.fontSans, fontSize: 13, color: T.textSecondary, margin: "0 0 10px", lineHeight: 1.6 }}>{blog.metaDescription}</p>
-        {blog.keywords?.length > 0 && (
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {blog.keywords.map((kw, i) => (
-              <span key={i} style={{ fontFamily: T.fontMono, fontSize: 10, fontWeight: 500, padding: "3px 10px", background: T.accentLight, color: T.accent, borderRadius: 6 }}>{kw}</span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── GEO panel ── */}
-      <GeoPanel blog={blog} businessName={profile.businessName} />
 
       {/* ═══════════════════════════════════════════ */}
       {/* ── BLOG DOCUMENT ── */}
@@ -853,8 +1004,6 @@ export default function EditorScreen({ blog, setBlog, profile, onBack, onRegener
             readingTime={blog.readingTime}
           />
 
-          {/* Social share row */}
-          <SocialShareRow title={blog.title} />
         </div>
 
         {/* Body */}
