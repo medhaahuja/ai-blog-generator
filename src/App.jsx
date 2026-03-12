@@ -155,7 +155,7 @@ function parseJsonObjectFromModel(raw) {
 export default function App() {
   const [screen, setScreen]               = useState("onboarding");
   const [step, setStep]                   = useState("topics");
-  const [profile, setProfile]             = useState({ businessName: "", businessType: "", location: "", services: [], unique: "", clientType: "", bookingUrl: "" });
+  const [profile, setProfile]             = useState({ businessName: "", industry: "", location: "", unique: "", clientType: "", bookingUrl: "" });
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [selectedFormat, setSelectedFormat] = useState(null);
   const [blog, setBlog]                   = useState(null);
@@ -165,29 +165,28 @@ export default function App() {
 
   // ── Blog library (persisted to localStorage) ──
   const [blogs, setBlogs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("zoca_blogs") || "[]"); }
+    try { return JSON.parse(localStorage.getItem("blog_studio_blogs") || "[]"); }
     catch { return []; }
   });
   const [editingBlogId, setEditingBlogId] = useState(null);
 
   const persistBlogs = (updated) => {
     setBlogs(updated);
-    try { localStorage.setItem("zoca_blogs", JSON.stringify(updated)); } catch {}
+    try { localStorage.setItem("blog_studio_blogs", JSON.stringify(updated)); } catch {}
   };
 
   const generateBlog = async (topic, format) => {
     setGenerating(true);
     setStep("editor");
     try {
-      const sys = `You are an elite blog writer for US beauty and wellness businesses, expert in both SEO and GEO (Generative Engine Optimization). You study top-performing blogs from Mindbody, Fresha, GlossGenius, StyleSeat, Allure, and Byrdie. You write content that ranks on Google AND gets cited by AI engines like ChatGPT, Perplexity, and Google AI Overviews. Your writing is scannable, high-converting, and structured for AI extraction: compelling hooks, short paragraphs (2-3 sentences max), keyword-rich H2 sub-headings, bullet points, cited statistics, pull quotes, direct answers before explanations (BLUF principle), and multiple CTAs that drive bookings. Return ONLY valid JSON with no markdown fences or explanation.`;
+      const sys = `You are an elite blog writer expert in both SEO and GEO (Generative Engine Optimization). You write content that ranks on Google AND gets cited by AI engines like ChatGPT, Perplexity, and Google AI Overviews. Your writing is scannable, high-converting, and structured for AI extraction: compelling hooks, short paragraphs (2-3 sentences max), keyword-rich H2 sub-headings, bullet points, cited statistics, pull quotes, direct answers before explanations (BLUF principle), and multiple CTAs. Return ONLY valid JSON with no markdown fences or explanation.`;
       const formatGuide = FORMAT_STRUCTURES[format] || FORMAT_STRUCTURES["how-to"];
-      const prompt = `Write a HIGH-CONVERTING, SEO-optimized blog post for the US beauty/wellness industry.
+      const prompt = `Write a HIGH-CONVERTING, SEO-optimized blog post.
 
 BUSINESS CONTEXT:
 - Name: ${profile.businessName}
-- Type: ${profile.businessType}
+- Industry: ${profile.industry}
 - Location: ${profile.location || "US-based"}
-- Services: ${profile.services.join(", ") || "General services"}
 - Unique angle: ${profile.unique || "None specified"}
 - Client type: ${profile.clientType || "General clients"}
 - Booking URL: ${profile.bookingUrl || "Not provided"}
@@ -480,7 +479,7 @@ Only include the fields relevant to the chosen format. Set irrelevant fields to 
                 fontFamily: T.fontSans, fontSize: 10, color: T.textTertiary,
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1,
               }}>
-                {profile.businessType}{profile.location ? ` · ${profile.location}` : ""}
+                {profile.industry}{profile.location ? ` · ${profile.location}` : ""}
               </div>
             </div>
           </div>
@@ -534,7 +533,7 @@ Only include the fields relevant to the chosen format. Set irrelevant fields to 
             background: T.surfaceAlt, padding: "4px 10px", borderRadius: 999,
             border: `1px solid ${T.border}`, letterSpacing: "0.04em",
           }}>
-            {profile.businessType}
+            {profile.industry}
           </div>
         </div>
 

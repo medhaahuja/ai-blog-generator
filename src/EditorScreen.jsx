@@ -227,7 +227,7 @@ function SectionImage({ query, onDelete }) {
 }
 
 // ── Author meta bar: avatar + name + date + reading time ──
-function AuthorMetaRow({ businessName, businessType, year, readingTime }) {
+function AuthorMetaRow({ businessName, industry, year, readingTime }) {
   const initials = businessName ? businessName.slice(0, 2).toUpperCase() : "ZO";
   return (
     <div style={{
@@ -244,7 +244,7 @@ function AuthorMetaRow({ businessName, businessType, year, readingTime }) {
         <div>
           <div style={{ fontFamily: T.fontSans, fontSize: 13, fontWeight: 700, color: T.text }}>{businessName}</div>
           <div style={{ fontFamily: T.fontSans, fontSize: 11, color: T.textTertiary, marginTop: 2 }}>
-            {currentMonth} {year} &middot; {businessType}
+            {currentMonth} {year} &middot; {industry}
           </div>
         </div>
       </div>
@@ -268,7 +268,7 @@ function SocialShareRow({ title }) {
   const pinUrl = `https://pinterest.com/pin/create/button/?description=${encodeURIComponent(title)}`;
 
   const copyLink = () => {
-    navigator.clipboard.writeText(title + " — via Zoca Blog Studio");
+    navigator.clipboard.writeText(title);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2200);
   };
@@ -448,7 +448,7 @@ function RelatedPostsSection({ suggestions }) {
 }
 
 // ── Author/business bio card at the bottom ──
-function AuthorBioCard({ businessName, businessType, location }) {
+function AuthorBioCard({ businessName, industry, location }) {
   const initials = businessName ? businessName.slice(0, 2).toUpperCase() : "ZO";
   return (
     <div style={{
@@ -466,9 +466,9 @@ function AuthorBioCard({ businessName, businessType, location }) {
         <div style={{ fontFamily: T.fontSans, fontSize: 10, fontWeight: 700, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>Written by</div>
         <div style={{ fontFamily: T.fontSans, fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 6 }}>{businessName}</div>
         <p style={{ fontFamily: T.fontSans, fontSize: 13, color: T.textSecondary, margin: "0 0 12px", lineHeight: 1.65 }}>
-          {businessName} is a trusted {businessType?.toLowerCase()}{location ? ` in ${location}` : ""}. We specialize in expert beauty and wellness services — helping our clients look and feel their very best, every visit.
+          {businessName} is a trusted {industry?.toLowerCase()}{location ? ` in ${location}` : ""}. We're passionate about delivering outstanding results for our clients.
         </p>
-        <div style={{ fontFamily: T.fontSans, fontSize: 11, fontWeight: 600, color: T.accent }}>Verified Expert &middot; {businessType}</div>
+        <div style={{ fontFamily: T.fontSans, fontSize: 11, fontWeight: 600, color: T.accent }}>Verified Expert &middot; {industry}</div>
       </div>
     </div>
   );
@@ -667,7 +667,7 @@ export default function EditorScreen({ blog, setBlog, profile, onBack, onRegener
     try {
       const section = blog.sections[idx];
       const sys = `You are a skilled blog writer for beauty and wellness businesses. Rewrite the given section to be more engaging, scannable (short paragraphs, 2-3 sentences max), and conversion-focused. Return ONLY the rewritten content in plain text, no markdown headers.`;
-      const prompt = `Original heading: ${section.heading}\nOriginal content:\n${section.content}\n\nRewrite for a ${profile.businessType.toLowerCase()} ${profile.location ? "in " + profile.location : ""}. Keep it short, punchy, scannable. Max 2-3 sentences. Return only the body text.`;
+      const prompt = `Original heading: ${section.heading}\nOriginal content:\n${section.content}\n\nRewrite for a ${profile.industry.toLowerCase()} ${profile.location ? "in " + profile.location : ""}. Keep it short, punchy, scannable. Max 2-3 sentences. Return only the body text.`;
       const newContent = await callClaude(sys, prompt);
       setBlog(b => ({ ...b, sections: b.sections.map((s, i) => i === idx ? { ...s, content: newContent.trim() } : s) }));
     } catch (e) { console.error(e); }
@@ -986,7 +986,7 @@ export default function EditorScreen({ blog, setBlog, profile, onBack, onRegener
               fontFamily: T.fontSans, fontSize: 10, fontWeight: 700,
               padding: "3px 13px", borderRadius: 999,
               background: T.accentLight, color: T.accent, letterSpacing: "0.5px", textTransform: "uppercase",
-            }}>{profile.businessType}</span>
+            }}>{profile.industry}</span>
             <span style={{ fontFamily: T.fontSans, fontSize: 11, color: T.textTertiary }}>{currentMonth} {year}</span>
           </div>
 
@@ -1004,7 +1004,7 @@ export default function EditorScreen({ blog, setBlog, profile, onBack, onRegener
           {/* Author meta row */}
           <AuthorMetaRow
             businessName={profile.businessName}
-            businessType={profile.businessType}
+            industry={profile.industry}
             year={year}
             readingTime={blog.readingTime}
           />
@@ -1289,7 +1289,7 @@ export default function EditorScreen({ blog, setBlog, profile, onBack, onRegener
           {/* ── Author Bio Card ── */}
           <AuthorBioCard
             businessName={profile.businessName}
-            businessType={profile.businessType}
+            industry={profile.industry}
             location={profile.location}
           />
         </div>

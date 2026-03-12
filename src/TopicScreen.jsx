@@ -38,11 +38,10 @@ export default function TopicScreen({ profile, onSelect, loading, setLoading, to
     setLoading(true);
     setError("");
     try {
-      const sys = `You are an SEO content strategist specializing in the US beauty and wellness industry. You deeply understand local search behavior, seasonal trends, and what content drives bookings for small businesses. Return ONLY valid JSON, no markdown fences, no preamble, no explanation.`;
+      const sys = `You are an SEO content strategist. You deeply understand local search behavior, seasonal trends, and what content drives leads for small businesses across all industries. Return ONLY valid JSON, no markdown fences, no preamble, no explanation.`;
       const prompt = `Generate 5 blog topic suggestions for this business:
-- Business: ${profile.businessName} (${profile.businessType})
+- Business: ${profile.businessName} (${profile.industry})
 - Location: ${profile.location || "US-based"}
-- Services: ${profile.services.join(", ") || "General services"}
 - Unique angle: ${profile.unique || "None specified"}
 - Client type: ${profile.clientType || "General"}
 - Current month: ${currentMonth}, Season: ${currentSeason}
@@ -86,7 +85,7 @@ Mix categories. Include at least one seasonal (${currentSeason}) and one questio
           Choose your topic
         </h2>
         <p style={{ fontFamily: T.fontSans, fontSize: 13, color: T.textSecondary, marginTop: 6 }}>
-          AI-curated for {profile.businessType}
+          AI-curated for {profile.industry}
           {profile.location ? ` in ${profile.location}` : ""} · {currentMonth}
         </p>
       </div>
@@ -100,7 +99,7 @@ Mix categories. Include at least one seasonal (${currentSeason}) and one questio
             animation: "spin 0.9s linear infinite",
           }} />
           <div style={{ fontFamily: T.fontSans, fontSize: 13, color: T.textSecondary }}>
-            Analyzing trends for {profile.businessType.toLowerCase()}s…
+            Analyzing trends for {profile.industry.toLowerCase()}s…
           </div>
         </div>
       )}

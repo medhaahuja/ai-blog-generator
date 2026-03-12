@@ -1,4 +1,4 @@
-// ── Zoca Dark Design Tokens ──
+// ── Design Tokens ──
 export const T = {
   // Backgrounds
   bg: "#0A0A0A",
@@ -11,18 +11,18 @@ export const T = {
   borderLight: "#1C1C1C",
   borderHover: "#333333",
 
-  // Typography — Zoca lavender-white
+  // Typography
   text: "#F3EDFD",
   textSecondary: "#9A93B0",
   textTertiary: "#4D4860",
 
-  // Zoca signature pink
+  // Accent pink
   accent: "#FFA8CD",
   accentLight: "rgba(255, 168, 205, 0.10)",
   accentHover: "#FFB8D8",
   accentGlow: "rgba(255, 168, 205, 0.22)",
 
-  // Zoca blue
+  // Accent blue
   blue: "#4D65FF",
   blueLight: "rgba(77, 101, 255, 0.12)",
   blueGlow: "rgba(77, 101, 255, 0.25)",
@@ -48,22 +48,31 @@ export const T = {
   radiusSm: "8px",
   radiusLg: "16px",
 
-  // Typography — Montserrat (Zoca brand font)
+  // Typography — Montserrat
   font: "'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif",
   fontSans: "'Montserrat', -apple-system, sans-serif",
   fontSerif: "'Instrument Serif', Georgia, serif",
   fontMono: "'JetBrains Mono', monospace",
 };
 
-// ── Service options by business type ──
-export const SERVICE_OPTIONS = {
-  "Hair Salon": ["Haircuts & Styling", "Coloring & Highlights", "Balayage & Ombre", "Keratin Treatments", "Extensions", "Bridal Hair", "Curly Hair Specialist", "Blowouts"],
-  "Barbershop": ["Men's Cuts", "Beard Grooming", "Hot Towel Shaves", "Fades & Tapers", "Kids Cuts", "Hair Design", "Scalp Treatments"],
-  "Spa": ["Facials", "Massage Therapy", "Body Wraps", "Aromatherapy", "Couples Treatments", "Hot Stone Massage", "Hydrotherapy"],
-  "Med Spa": ["Botox & Fillers", "Laser Treatments", "Chemical Peels", "Microneedling", "Body Contouring", "PRP Therapy", "Skin Rejuvenation"],
-  "Nail Salon": ["Manicures", "Pedicures", "Gel & Shellac", "Nail Art", "Acrylics", "Dip Powder", "Nail Repair"],
-  "Beauty Studio": ["Makeup Services", "Lash Extensions", "Brow Shaping", "Microblading", "Waxing", "Tinting", "Bridal Makeup"],
-};
+// ── Industry options ──
+export const INDUSTRIES = [
+  "Education & Tutoring",
+  "Art & Music",
+  "Finance & Accounting",
+  "Healthcare & Wellness",
+  "Food & Beverage",
+  "Retail & E-commerce",
+  "Technology & Software",
+  "Real Estate",
+  "Legal Services",
+  "Fitness & Sports",
+  "Beauty & Personal Care",
+  "Travel & Hospitality",
+  "Photography & Media",
+  "Interior Design",
+  "Coaching & Consulting",
+];
 
 export const BLOG_FORMATS = [
   { id: "how-to", name: "How-To Guide", desc: "Step-by-step instructions your clients can follow", icon: "📋" },
@@ -74,12 +83,13 @@ export const BLOG_FORMATS = [
 ];
 
 export const CLIENT_TYPES = [
+  "Students",
   "Young Professionals",
   "Families",
+  "Seniors",
+  "Businesses (B2B)",
+  "Local Community",
   "Luxury Clients",
-  "Budget-Conscious",
-  "Brides & Events",
-  "Teens & Students",
 ];
 
 export const CATEGORY_LABELS = {

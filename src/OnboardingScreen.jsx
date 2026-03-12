@@ -1,17 +1,11 @@
 import React, { useState } from "react";
-import { T, SERVICE_OPTIONS, CLIENT_TYPES } from "./constants";
+import { T, INDUSTRIES, CLIENT_TYPES } from "./constants";
 import { ZocaLogo, Button } from "./components";
-
-const BUSINESS_TYPES = Object.keys(SERVICE_OPTIONS);
-
-// Flat deduplicated list of all services across all types — used as fallback
-const ALL_SERVICES = [...new Set(Object.values(SERVICE_OPTIONS).flat())];
 
 const STEP_LABELS = {
   1: "Business Details",
-  2: "Services",
-  3: "Audience",
-  4: "Style",
+  2: "Audience",
+  3: "Style",
 };
 
 // ── Pill button ──
@@ -44,7 +38,7 @@ function Pill({ label, active, onClick, removable }) {
 // ── Shared page wrapper ──
 function Page({ step, children }) {
   const isWelcome = step === 0;
-  const progress = isWelcome ? 0 : (step / 4) * 100;
+  const progress = isWelcome ? 0 : (step / 3) * 100;
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, display: "flex", flexDirection: "column" }}>
@@ -53,7 +47,7 @@ function Page({ step, children }) {
         <ZocaLogo height={16} color={T.text} />
         {!isWelcome && (
           <div style={{ fontFamily: T.fontSans, fontSize: 12, fontWeight: 600, color: T.textSecondary, letterSpacing: "0.02em" }}>
-            <span style={{ color: T.accent }}>Step {step} of 4</span>
+            <span style={{ color: T.accent }}>Step {step} of 3</span>
             <span style={{ color: T.textTertiary }}> — {STEP_LABELS[step]}</span>
           </div>
         )}
@@ -167,47 +161,28 @@ function NavRow({ onBack, onContinue, continueLabel = "Continue →", disabled }
 
 
 export default function OnboardingScreen({ profile, setProfile, onComplete }) {
-  const [step, setStep]                       = useState(0);
-  const [customType, setCustomType]           = useState("");
-  const [showCustomType, setShowCustomType]   = useState(false);
-  const [extraTypes, setExtraTypes]           = useState([]);
-  const [serviceInput, setServiceInput]       = useState("");
-  const [customClients, setCustomClients]     = useState([]);
-  const [clientInput, setClientInput]         = useState("");
+  const [step, setStep]                   = useState(0);
+  const [customIndustry, setCustomIndustry] = useState("");
+  const [showCustomIndustry, setShowCustomIndustry] = useState(false);
+  const [extraIndustries, setExtraIndustries] = useState([]);
+  const [customClients, setCustomClients] = useState([]);
+  const [clientInput, setClientInput]     = useState("");
 
-  const allClients    = [...CLIENT_TYPES, ...customClients];
-  const typeSuggestions = SERVICE_OPTIONS[profile.businessType] || [];
-  const suggestions     = typeSuggestions.length > 0 ? typeSuggestions : ALL_SERVICES;
+  const allClients = [...CLIENT_TYPES, ...customClients];
 
   // ── Handlers ──
-  const selectType = (t) => {
-    if (t === "__other__") { setShowCustomType(true); setProfile(p => ({ ...p, businessType: "", services: [] })); }
-    else { setShowCustomType(false); setCustomType(""); setProfile(p => ({ ...p, businessType: t, services: [] })); }
+  const selectIndustry = (ind) => {
+    if (ind === "__other__") { setShowCustomIndustry(true); setProfile(p => ({ ...p, industry: "" })); }
+    else { setShowCustomIndustry(false); setCustomIndustry(""); setProfile(p => ({ ...p, industry: ind })); }
   };
 
-  const confirmCustomType = () => {
-    const val = customType.trim();
+  const confirmCustomIndustry = () => {
+    const val = customIndustry.trim();
     if (val) {
-      setExtraTypes(prev => prev.includes(val) ? prev : [...prev, val]);
-      setProfile(p => ({ ...p, businessType: val, services: [] }));
-      setShowCustomType(false);
-      setCustomType("");
-    }
-  };
-
-  const addService = (svc) => {
-    const val = svc.trim();
-    if (val && !profile.services.includes(val))
-      setProfile(p => ({ ...p, services: [...p.services, val] }));
-  };
-
-  const removeService = (svc) =>
-    setProfile(p => ({ ...p, services: p.services.filter(s => s !== svc) }));
-
-  const handleServiceKey = (e) => {
-    if (e.key === "Enter" && serviceInput.trim()) {
-      addService(serviceInput);
-      setServiceInput("");
+      setExtraIndustries(prev => prev.includes(val) ? prev : [...prev, val]);
+      setProfile(p => ({ ...p, industry: val }));
+      setShowCustomIndustry(false);
+      setCustomIndustry("");
     }
   };
 
@@ -220,7 +195,7 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
     }
   };
 
-  const canStep1 = profile.businessName.trim() && profile.businessType;
+  const canStep1 = profile.businessName.trim() && profile.industry;
 
   // ════════════════════════════════════════════
   // WELCOME
@@ -309,25 +284,25 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
           />
         </div>
 
-        {/* Business Type */}
+        {/* Industry */}
         <div>
-          <FieldLabel>Business Type</FieldLabel>
+          <FieldLabel>Industry</FieldLabel>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {[...BUSINESS_TYPES, ...extraTypes].map(t => (
-              <Pill key={t} label={t}
-                active={profile.businessType === t && !showCustomType}
-                onClick={() => selectType(t)}
+            {[...INDUSTRIES, ...extraIndustries].map(ind => (
+              <Pill key={ind} label={ind}
+                active={profile.industry === ind && !showCustomIndustry}
+                onClick={() => selectIndustry(ind)}
               />
             ))}
-            <Pill label="+ Other" active={showCustomType} onClick={() => selectType("__other__")} />
+            <Pill label="+ Other" active={showCustomIndustry} onClick={() => selectIndustry("__other__")} />
           </div>
 
-          {showCustomType && (
+          {showCustomIndustry && (
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <input
-                value={customType} onChange={e => setCustomType(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && confirmCustomType()}
-                placeholder="e.g. Tattoo Studio, Yoga Studio…" autoFocus
+                value={customIndustry} onChange={e => setCustomIndustry(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && confirmCustomIndustry()}
+                placeholder="e.g. Event Planning, Non-profit…" autoFocus
                 style={{
                   flex: 1, fontFamily: T.fontSans, fontSize: 13, padding: "10px 14px",
                   borderRadius: T.radiusSm, border: `1px solid ${T.accent}`,
@@ -335,12 +310,12 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
                   boxShadow: `0 0 0 3px ${T.accentGlow}`,
                 }}
               />
-              <button onClick={confirmCustomType} disabled={!customType.trim()} style={{
+              <button onClick={confirmCustomIndustry} disabled={!customIndustry.trim()} style={{
                 fontFamily: T.fontSans, fontSize: 12, fontWeight: 600,
                 padding: "10px 18px", borderRadius: T.radiusSm, border: "none",
-                background: customType.trim() ? T.accent : T.border,
-                color: customType.trim() ? "#0A0A0A" : T.textTertiary,
-                cursor: customType.trim() ? "pointer" : "not-allowed", flexShrink: 0,
+                background: customIndustry.trim() ? T.accent : T.border,
+                color: customIndustry.trim() ? "#0A0A0A" : T.textTertiary,
+                cursor: customIndustry.trim() ? "pointer" : "not-allowed", flexShrink: 0,
               }}>
                 Set →
               </button>
@@ -365,77 +340,10 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
   );
 
   // ════════════════════════════════════════════
-  // STEP 2 — Services
+  // STEP 2 — Audience
   // ════════════════════════════════════════════
   if (step === 2) return (
     <Page step={2}>
-      <StepHead
-        title="What services do you offer?"
-        subtitle="We'll create blogs around the services your customers are searching for."
-      />
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        {/* Selected services */}
-        {profile.services.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {profile.services.map(svc => (
-              <Pill key={svc} label={svc} active removable onClick={() => removeService(svc)} />
-            ))}
-          </div>
-        )}
-
-        {/* Service input */}
-        <div style={{ position: "relative" }}>
-          <input
-            value={serviceInput} onChange={e => setServiceInput(e.target.value)}
-            onKeyDown={handleServiceKey}
-            placeholder="Type a service and press Enter…"
-            autoFocus
-            style={{
-              width: "100%", fontFamily: T.fontSans, fontSize: 14, fontWeight: 400,
-              padding: "12px 16px", borderRadius: T.radiusSm,
-              border: `1px solid ${T.border}`, background: T.surface,
-              color: T.text, outline: "none",
-              transition: "border-color 0.2s, box-shadow 0.2s",
-            }}
-            onFocus={e => { e.target.style.borderColor = T.accent; e.target.style.boxShadow = `0 0 0 3px ${T.accentGlow}`; }}
-            onBlur={e => { e.target.style.borderColor = T.border; e.target.style.boxShadow = "none"; }}
-          />
-        </div>
-
-        {/* Suggestions */}
-        <div>
-            <FieldLabel>{typeSuggestions.length > 0 ? "Suggestions" : "Popular services"}</FieldLabel>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {suggestions.filter(s => !profile.services.includes(s)).map(svc => (
-                <button key={svc} onClick={() => addService(svc)} style={{
-                  fontFamily: T.fontSans, fontSize: 12, fontWeight: 400,
-                  padding: "6px 14px", borderRadius: 999,
-                  border: `1px solid ${T.border}`,
-                  background: "transparent", color: T.textSecondary,
-                  cursor: "pointer", transition: "all 0.15s",
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = T.accent + "88"; e.currentTarget.style.color = T.accent; e.currentTarget.style.background = T.accentLight; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textSecondary; e.currentTarget.style.background = "transparent"; }}
-                >
-                  + {svc}
-                </button>
-              ))}
-            </div>
-          </div>
-
-        <Helper>Tip: Add your most popular services first — they'll get the most blog coverage.</Helper>
-      </div>
-
-      <NavRow onBack={() => setStep(1)} onContinue={() => setStep(3)} />
-    </Page>
-  );
-
-  // ════════════════════════════════════════════
-  // STEP 3 — Audience
-  // ════════════════════════════════════════════
-  if (step === 3) return (
-    <Page step={3}>
       <StepHead
         title="Who are your customers?"
         subtitle="This helps us tailor blog content to the right audience and speak their language."
@@ -486,15 +394,15 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
         <Helper>Not sure? Leave this blank — we'll write for a general audience.</Helper>
       </div>
 
-      <NavRow onBack={() => setStep(2)} onContinue={() => setStep(4)} />
+      <NavRow onBack={() => setStep(1)} onContinue={() => setStep(3)} />
     </Page>
   );
 
   // ════════════════════════════════════════════
-  // STEP 4 — Style
+  // STEP 3 — Style
   // ════════════════════════════════════════════
   return (
-    <Page step={4}>
+    <Page step={3}>
       <StepHead
         title="What makes you stand out?"
         subtitle="Give your blogs a unique voice. The more specific you are, the better your content will be."
@@ -544,7 +452,7 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
       </div>
 
       <div style={{ marginTop: 48, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Button variant="ghost" size="md" onClick={() => setStep(3)}>← Back</Button>
+        <Button variant="ghost" size="md" onClick={() => setStep(2)}>← Back</Button>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button
             onClick={onComplete}
@@ -559,7 +467,7 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
           >
             Skip this step
           </button>
-          <Button variant="primary" size="lg" onClick={onComplete} disabled={!profile.businessName.trim() || !profile.businessType}>
+          <Button variant="primary" size="lg" onClick={onComplete} disabled={!profile.businessName.trim() || !profile.industry}>
             Launch Blog Studio →
           </Button>
         </div>
