@@ -219,7 +219,7 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
           fontFamily: T.font, fontSize: 44, fontWeight: 700, color: T.text,
           margin: "0 0 20px", lineHeight: 1.1, letterSpacing: "-0.8px",
         }}>
-          Get More Bookings<br />
+          Increase Your Sales<br />
           <span style={{ color: T.accent }}>with AI-Powered Blogs</span>
         </h1>
 
@@ -228,7 +228,7 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
           margin: "0 auto 36px", maxWidth: 420, lineHeight: 1.7,
         }}>
           Generate blog posts that help your business show up when customers search
-          for services you provide — and turn those searches into appointments.
+          for what you offer — and turn those searches into sales.
         </p>
 
         {/* Feature bullets */}
@@ -278,7 +278,7 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
           <BigInput
             value={profile.businessName}
             onChange={v => setProfile(p => ({ ...p, businessName: v }))}
-            placeholder="Glow Beauty Salon"
+            placeholder="Zomato"
             autoFocus
             onKeyDown={e => e.key === "Enter" && canStep1 && setStep(2)}
           />
@@ -433,11 +433,11 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
 
         {/* Booking URL */}
         <div>
-          <FieldLabel>Booking page URL <span style={{ fontWeight: 400, textTransform: "none", color: T.textTertiary, letterSpacing: 0 }}>(optional)</span></FieldLabel>
+          <FieldLabel>Website / Sales page URL <span style={{ fontWeight: 400, textTransform: "none", color: T.textTertiary, letterSpacing: 0 }}>(optional)</span></FieldLabel>
           <input
             value={profile.bookingUrl}
             onChange={e => setProfile(p => ({ ...p, bookingUrl: e.target.value }))}
-            placeholder="https://yourbusiness.com/book"
+            placeholder="https://yourbusiness.com"
             style={{
               width: "100%", fontFamily: T.fontSans, fontSize: 13, fontWeight: 400,
               padding: "12px 16px", borderRadius: T.radiusSm,
@@ -447,7 +447,7 @@ export default function OnboardingScreen({ profile, setProfile, onComplete }) {
             onFocus={e => { e.target.style.borderColor = T.accent; e.target.style.boxShadow = `0 0 0 3px ${T.accentGlow}`; }}
             onBlur={e => { e.target.style.borderColor = T.border; e.target.style.boxShadow = "none"; }}
           />
-          <Helper>We'll add this to your blog's call-to-action so readers can book directly.</Helper>
+          <Helper>We'll add this to your blog's call-to-action so readers can visit your site.</Helper>
         </div>
       </div>
 
